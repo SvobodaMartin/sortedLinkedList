@@ -1,0 +1,38 @@
+version: '3.9'
+
+name: shipmonktest
+
+volumes:
+  database:
+
+services:
+  db:
+    build:
+      context: ../
+      dockerfile: docker/mysql/Dockerfile
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
+    volumes:
+      - database:/var/lib/mysql
+    ports:
+      - ${PORT_DB:-}:3306
+
+  adminer:
+    image: adminer
+    ports:
+      - ${PORT_ADMINER:-8080}:8080
+    depends_on:
+      -   db
+
+  backend:
+    build:
+      context: ../
+      dockerfile: ./docker/php/Dockerfile
+    ports:
+      - ${PORT_BACKEND:-8000}:8000
+    volumes:
+      - ../:/var/www/
+    command: ["symfony", "serve", "--no-tls"]
+    user: ${UID:-1000}:${GID:-1000}
+    depends_on:
+      - db
